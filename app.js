@@ -1,9 +1,14 @@
 
 
 const express = require("express")
+
+const Joi = require('joi');
+
 // init app 
 
 const app = express();
+app.use(express.json())
+
 
 const books = [
     {id : 1,title:"sexEdcution"},
@@ -12,12 +17,10 @@ const books = [
     
 ]
 
-app.get("/",(req,res)=>{
-    res.send("hello welcome to epxress js AND hello world ")
-})
+ 
 
 app.get("/api/book",(req,res)=>{
-   res.send(books)
+   res.status(200).send(books)
      
 
 })  
@@ -33,6 +36,32 @@ app.get("/api/books/:id",(req,res)=>{
 
 }) 
 
+
+app.post("/api/books",(req,res)=>{
+          
+    const schema = Joi.object({
+        id: Joi.number().min(1).max(200).required(),
+        title: Joi.string().min(3).max(200).required().trim()
+    });
+
+
+         const { error } = schema.validate(req.body);
+
+        if(error){
+            return res.status(400).json({message : error.details[0].message})
+        }
+
+        const book = {
+            id :req.body.id,
+            title : req.body.title,
+    
+        }
+        
+        books.push(book)
+        res.status(201).json(book)// created successfully
+        console.log(books)
+      
+}) 
 
  
 const Port = 5000
