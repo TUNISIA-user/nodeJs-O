@@ -3,22 +3,13 @@
 const express  =require("express")
 const router = express.Router()
 const Joi = require("joi")
-
+const asyncHnale = require("express-async-handler")
 
 
 const {Author }  = require("../models/Author") //  import this Auther from model 
 
-
-
-const authors  = [
-
-     {id : 1,firstName:"Nassim",lastName : "nahdi",nat:"tunisia",image:"dafault-iamge1.png"},
-     {id : 2,firstName:"Ghaith",lastName : "khaled",nat:"russia",image:"dafault-iamge2.png"},
-     {id : 3,firstName:"ranim",lastName : "mayden",nat:"italia",image:"dafault-iamge3.png"},
-     {id : 4,firstName:"khalil",lastName : "jolya",nat:"paris",image:"dafault-iamge4.png"},
-     
-]
-
+// do asyncHandler
+ 
 
 
 /**
@@ -32,9 +23,9 @@ const authors  = [
  * 
  */
  
-router.get("/",async(req,res)=>{
+router.get("/",async(req,res)=>{  // get data from data bases
  try{
-    const FetchDataBases = await Author.find().sort({firstName: 1 }).select("firstName lastName _id nat");
+    const FetchDataBases = await Author.find()//.sort({firstName: 1 }).select("firstName lastName _id nat");
     console.log(FetchDataBases)
    
     res.status(200).json(FetchDataBases)    //  response all dat for each users get request 
@@ -101,6 +92,30 @@ router.get("/:id",async(req,res)=>{
 })
 
 
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function ValidateCreateBookx (obj){
     const schema = Joi.object({
         id: Joi.number().min(1).max(200).required(),
@@ -151,13 +166,14 @@ router.post("/",async(req,res)=>{
         nat : req.body.nat,
         image : req.body.image
 
-    })
+    })  
      
    const result =  await   authors1.save()
     
     
 
     res.status(201).json(result)// created successfully
+    
    } catch(err){
     console.log(error)
     res.status(500).json({message: "Something went wrong here"})
@@ -168,26 +184,84 @@ router.post("/",async(req,res)=>{
 
 
 
+/**
+ *  @desc update  authors 
+ *  @route /api/authors
+ *  @method PUT
+ *  @access  public 
+ * 
+ */
 
-
-
-const  RetrunData = (data)=> authors.find(b=>b.id ===parseInt(data)) 
- 
-router.put("/:id",(req,res)=>{
-    
-    const  { error}  = ValidateUpdateBooky(req.body)
-    
-    error &&  res.status(400).json({message : error.details[0].message})
-    RetrunData(req.params.id) ? res.status(200).json({message : "book has been update"}) :  res.status(404).json({message :"book not found "})
-
-})
 
  
-router.delete("/:id",(req,res)=>{
+ 
+router.put("/:id", async (req, res) => {
+    const { error } = ValidateUpdateBooky(req.body);
+    
+   
+    error &&  res.status(400).json({ message: error.details[0].message });
+   
+
+    try {
+        const author = await Author.findByIdAndUpdate(
+            req.params.id,
+            {
+                $set: {
+                    firstName: req.body.firstName,
+                    lastName: req.body.lastName,
+                    nat: req.body.nat,
+                    image: req.body.image,
+                },
+            },
+            { new: true }  // This option ensures the updated document is returned
+        );
+        console.log(author)
+        if (!author) {
+            return res.status(404).json({ message: "Author not found" });
+        }
+
+        res.status(200).json(author);
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+
+
+
+
+
+
+
+/**
+ *  @desc delete  authors 
+ *  @route /api/authors
+ *  @method PUT
+ *  @access  public 
+ * 
+ */
+
+
+
+ 
+router.delete("/:id",async(req,res)=>{
     
     const  { error}  = ValidateUpdateBooky(req.body)
     error &&  res.status(400).json({message : error.details[0].message})
-    RetrunData(req.params.id) ? res.status(200).json({message : "book has been update"}) :  res.status(404).json({message :"book not found "})
+    const author  = await Author.findById(req.params.id)
+    try{
+        if(author){
+              await Author.findByIdAndDelete(req.params.id)
+            res.status(200).json({message:  "auhtor has been deleted"})
+        }else{
+            res.status(404).json({message: "author not found"})
+        }
+       
+    }
+    catch(error){
+        console.log(`The eroor was ${error}`)
+    }
+
 
 })
 
